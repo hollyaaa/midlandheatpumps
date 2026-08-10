@@ -1,161 +1,328 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-gb">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us — General Enquiry</title>
+<style>
+  :root {
+    --ink: #1c2521;
+    --paper: #f7f6f2;
+    --line: #d8d4ca;
+    --accent: #2f5d4f;
+    --accent-dark: #234438;
+    --error: #b3432b;
+  }
 
-  <title>Contact Form</title>
+  * { box-sizing: border-box; }
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    padding: 40px 16px;
+  }
 
-    .form-container {
-      background: white;
-      padding: 30px;
-      width: 350px;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
+  .card {
+    max-width: 620px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 40px clamp(20px, 5vw, 48px);
+  }
 
-    h1 {
-      text-align: center;
-    }
+  h1 {
+    font-size: 1.5rem;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
 
-    input {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0 15px;
-      box-sizing: border-box;
-    }
+  .subtitle {
+    margin: 0 0 32px;
+    color: #5a6560;
+    font-size: 0.95rem;
+  }
 
-    button {
-      width: 100%;
-      padding: 12px;
-      background: #3ecf8e;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+  fieldset {
+    border: none;
+    padding: 0;
+    margin: 0 0 24px;
+  }
 
-    button:hover {
-      background: #2fb978;
-    }
+  legend {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #5a6560;
+    padding: 0 0 12px;
+  }
 
-    #message {
-      margin-top: 15px;
-      text-align: center;
-    }
-  </style>
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .field { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  label .req { color: var(--error); font-weight: 400; }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+
+  textarea { resize: vertical; min-height: 90px; }
+
+  .phone-group {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 8px;
+  }
+
+  .checkbox-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .checkbox-field input { margin-top: 3px; }
+  .checkbox-field label { font-size: 0.85rem; font-weight: 400; margin: 0; }
+
+  button {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  button:hover { background: var(--accent-dark); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  #status {
+    margin-top: 16px;
+    font-size: 0.9rem;
+    padding: 10px 12px;
+    border-radius: 4px;
+    display: none;
+  }
+
+  #status.success { display: block; background: #e7f3ee; color: var(--accent-dark); }
+  #status.error { display: block; background: #fbeae6; color: var(--error); }
+
+  @media (max-width: 480px) {
+    .row { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
-
 <body>
 
-  <div class="form-container">
+<div class="card">
+  <h1>General Enquiry</h1>
+  <p class="subtitle">Tell us about your project and we'll get back to you.</p>
 
-    <h1>Contact Form</h1>
+  <form id="contact-form" novalidate>
 
-    <form id="contactForm">
+    <fieldset>
+      <legend>Your details</legend>
 
-      <label>Name</label>
-      <input
-        type="text"
-        id="name"
-        placeholder="Enter your name"
-        required
-      >
+      <div class="row">
+        <div class="field">
+          <label for="firstname">First name <span class="req">*</span></label>
+          <input type="text" id="firstname" name="firstname" autocomplete="given-name" required>
+        </div>
+        <div class="field">
+          <label for="lastname">Last name <span class="req">*</span></label>
+          <input type="text" id="lastname" name="lastname" autocomplete="family-name" required>
+        </div>
+      </div>
 
-      <label>Email</label>
-      <input
-        type="email"
-        id="email"
-        placeholder="Enter your email"
-        required
-      >
+      <div class="field">
+        <label for="email">Email <span class="req">*</span></label>
+        <input type="email" id="email" name="email" autocomplete="email" required>
+      </div>
 
-      <button type="submit">
-        Submit
-      </button>
+      <div class="field">
+        <label for="phone">Phone</label>
+        <div class="phone-group">
+          <select id="country_code" name="country_code" autocomplete="tel-country-code">
+            <option value="+353" selected>IE +353</option>
+            <option value="+44">UK +44</option>
+          </select>
+          <input type="tel" id="phone" name="phone" autocomplete="tel">
+        </div>
+      </div>
+    </fieldset>
 
-    </form>
+    <fieldset>
+      <legend>Address</legend>
 
-    <div id="message"></div>
+      <div class="field">
+        <label for="address_line1">Address line 1</label>
+        <input type="text" id="address_line1" name="address_line1" autocomplete="address-line1">
+      </div>
 
-  </div>
+      <div class="field">
+        <label for="address_line2">Address line 2</label>
+        <input type="text" id="address_line2" name="address_line2" autocomplete="address-line2">
+      </div>
 
+      <div class="row">
+        <div class="field">
+          <label for="city">Town / city</label>
+          <input type="text" id="city" name="city" autocomplete="address-level2">
+        </div>
+        <div class="field">
+          <label for="county">County</label>
+          <input type="text" id="county" name="county" autocomplete="address-level1">
+        </div>
+      </div>
 
-  <!-- Supabase JavaScript -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <div class="row">
+        <div class="field">
+          <label for="postcode">Eircode / postcode</label>
+          <input type="text" id="postcode" name="postcode" autocomplete="postal-code">
+        </div>
+        <div class="field">
+          <label for="country">Country</label>
+          <input type="text" id="country" name="country" autocomplete="country-name" value="Ireland">
+        </div>
+      </div>
+    </fieldset>
 
-  <script>
+    <fieldset>
+      <legend>Your enquiry</legend>
 
-    // Replace these with your Supabase project details
+      <div class="checkbox-field">
+        <input type="checkbox" id="existing_customer" name="existing_customer">
+        <label for="existing_customer">I am an existing customer</label>
+      </div>
+
+      <div class="field">
+        <label for="enquiry_message">Message</label>
+        <textarea id="enquiry_message" name="enquiry_message"></textarea>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Consent</legend>
+
+      <div class="checkbox-field">
+        <input type="checkbox" id="processing_consent" name="processing_consent" required>
+        <label for="processing_consent">
+          I agree to allow this data to be stored and processed in order to respond to my enquiry. <span class="req">*</span>
+        </label>
+      </div>
+
+      <div class="checkbox-field">
+        <input type="checkbox" id="marketing_consent" name="marketing_consent">
+        <label for="marketing_consent">
+          I agree to receive other communications about products and services.
+        </label>
+      </div>
+    </fieldset>
+
+    <button type="submit" id="submit-btn">Send enquiry</button>
+    <div id="status" role="status"></div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  // ---- Configure your Supabase project here ----
     const SUPABASE_URL = "https://ltgxnrztexdhhfypgfqo.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_SKdMiG7oAWxtXLdsPetkfQ_pIh1Gi82";
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0Z3hucnp0ZXhkaGhmeXBnZnFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0MDA3MDEsImV4cCI6MjA5OTk3NjcwMX0.L7pIx-oXR4iVGuoxuKS_yVzmqENLOtVxfqgGUfS5WmE';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const supabaseClient = supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+  const form = document.getElementById('contact-form');
+  const statusEl = document.getElementById('status');
+  const submitBtn = document.getElementById('submit-btn');
 
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusEl.className = '';
+    statusEl.textContent = '';
 
-    // Handle form submission
-    document
-      .getElementById("contactForm")
-      .addEventListener("submit", async function(event) {
+    if (!form.processing_consent.checked) {
+      statusEl.className = 'error';
+      statusEl.textContent = 'Please agree to the data processing consent to continue.';
+      return;
+    }
 
-        event.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
 
-        const name = document.getElementById("name").value;
-        const email = document.getElementById("email").value;
+    const { error } = await supabase.from('form_submissions').insert([
+      {
+        first_name: form.firstname.value,
+        last_name: form.lastname.value,
+        email: form.email.value,
+        phone_country_code: form.country_code.value,
+        phone: form.phone.value || null,
+        address_line1: form.address_line1.value || null,
+        address_line2: form.address_line2.value || null,
+        city: form.city.value || null,
+        county: form.county.value || null,
+        postcode: form.postcode.value || null,
+        country: form.country.value || 'Ireland',
+        existing_customer: form.existing_customer.checked,
+        enquiry_message: form.enquiry_message.value || null,
+        processing_consent: form.processing_consent.checked,
+        marketing_consent: form.marketing_consent.checked,
+        page_url: window.location.href,
+        user_agent: navigator.userAgent,
+      },
+    ]);
 
-        const message = document.getElementById("message");
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Send enquiry';
 
-        message.textContent = "Saving...";
+    if (error) {
+      statusEl.className = 'error';
+      statusEl.textContent = 'Something went wrong — please try again.';
+      console.error(error);
+      return;
+    }
 
-
-        // Insert data into Supabase
-        const { data, error } = await supabaseClient
-          .from("contacts")
-          .insert([
-            {
-              name: name,
-              email: email
-            }
-          ]);
-
-
-        if (error) {
-
-          console.error(error);
-
-          message.textContent =
-            "Error: " + error.message;
-
-          message.style.color = "red";
-
-          return;
-        }
-
-
-        // Success
-        message.textContent =
-          "Form submitted successfully!";
-
-        message.style.color = "green";
-
-        document.getElementById("contactForm").reset();
-
-      });
-
-  </script>
+    statusEl.className = 'success';
+    statusEl.textContent = 'Thanks — your enquiry has been sent.';
+    form.reset();
+    form.country.value = 'Ireland';
+  });
+</script>
 
 </body>
 </html>
