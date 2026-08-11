@@ -1,0 +1,1338 @@
+class TextRotator {
+  static selector = "[data-text-rotate]";
+
+  constructor(element, options = {}) {
+    this.element = element;
+    this.texts = element.dataset.textRotate
+      .split(",")
+      .map((text) => text.trim());
+    this.action = element.dataset.action;
+    this.currentIndex = 0;
+    this.speed = parseInt(element.dataset.rotateSpeed) || options.speed || 4000;
+    this.fadeSpeed = options.fadeSpeed || 1000;
+    this.slideDistance =
+      element.dataset.slideDistance || options.slideDistance || "4rem";
+
+    this.init();
+  }
+
+  init() {
+    this.element.style.transition = `all ${this.fadeSpeed}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+    this.element.style.display = "inline-block";
+    this.element.style.minHeight = "1.2em";
+    this.element.style.opacity = "1";
+    this.element.style.transform = "translateX(0)";
+    this.element.style.position = "relative";
+    this.startRotation();
+  }
+
+  startRotation() {
+    setInterval(() => {
+      this.rotateText();
+    }, this.speed);
+  }
+
+  rotateText() {
+    // emit rotateText event
+    const event = new CustomEvent("segen-action", {
+      detail: {
+        action: this.action,
+      },
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+
+    // Get next text
+    const nextIndex = (this.currentIndex + 1) % this.texts.length;
+    const nextText = this.texts[nextIndex];
+
+    // Get positioning information
+    const rect = this.element.getBoundingClientRect();
+    const parentRect = this.element.parentElement.getBoundingClientRect();
+
+    // Create a duplicate element for the incoming text
+    const newElement = this.element.cloneNode(true);
+    newElement.textContent = nextText;
+    newElement.style.position = "absolute";
+    newElement.style.top = rect.top - parentRect.top + "px";
+    newElement.style.left = rect.left - parentRect.left + "px";
+    newElement.style.width = rect.width + "px";
+    newElement.style.height = rect.height + "px";
+    newElement.style.opacity = "0";
+    newElement.style.transform = `translateX(${this.slideDistance})`;
+    newElement.style.transition = `all ${this.fadeSpeed}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+    newElement.style.zIndex = "1";
+
+    // Add new element to parent
+    this.element.parentElement.appendChild(newElement);
+
+    // Trigger reflow
+    newElement.offsetHeight;
+
+    // Start both animations simultaneously
+    // Old text slides out to the left
+    this.element.style.opacity = "0";
+    this.element.style.transform = `translateX(-${this.slideDistance})`;
+
+    // New text slides in from the right
+    newElement.style.opacity = "1";
+    newElement.style.transform = "translateX(0)";
+
+    // After animation completes, replace the old element
+    setTimeout(() => {
+      this.currentIndex = nextIndex;
+      this.element.textContent = nextText;
+
+      // Disable transition to prevent jumping
+      this.element.style.transition = "none";
+      this.element.style.opacity = "1";
+      this.element.style.transform = "translateX(0)";
+
+      // Trigger reflow
+      this.element.offsetHeight;
+
+      // Re-enable transition
+      this.element.style.transition = `all ${this.fadeSpeed}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+
+      // Remove the temporary element
+      newElement.remove();
+    }, this.fadeSpeed);
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class Counter {
+  static selector = "[data-counter]";
+
+  constructor(element, options = {}) {
+    this.counter = element;
+    this.endValue = element.dataset.counter;
+    this.hasDecimal = this.endValue.includes(".");
+    this.decimalPlaces = this.hasDecimal
+      ? this.endValue.split(".")[1].length
+      : 0;
+    this.end = this.hasDecimal
+      ? parseFloat(this.endValue)
+      : parseInt(this.endValue);
+    this.duration =
+      parseInt(element.dataset.duration) || options.duration || 1000;
+    this.stepTime = 16; // Fixed 16ms for ~60fps
+    this.increment = this.end / (this.duration / this.stepTime);
+    this.triggerOnVisible = element.dataset.trigger === "visible";
+
+    this.start = 0;
+    this.timer = null;
+    this.observer = null;
+
+    this.init();
+  }
+
+  init() {
+    this.createObserver();
+  }
+
+  startCounter() {
+    this.timer = setInterval(() => {
+      this.incrementCounter();
+    }, this.stepTime);
+  }
+
+  incrementCounter() {
+    this.start += this.increment;
+
+    if (this.start >= this.end) {
+      this.counter.innerHTML = this.formatNumber(this.end);
+      this.stopCounter();
+    } else {
+      let displayValue;
+      if (this.hasDecimal) {
+        displayValue = parseFloat(this.start.toFixed(this.decimalPlaces));
+      } else {
+        displayValue = Math.floor(this.start);
+      }
+      this.counter.innerHTML = this.formatNumber(displayValue);
+    }
+  }
+
+  formatNumber(num) {
+    return num.toLocaleString();
+  }
+
+  createObserver() {
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            this.startCounter();
+            this.observer.unobserve(this.counter);
+          }
+        });
+      },
+      {
+        rootMargin: "0px 0px -20px 0px",
+      }
+    );
+    this.observer.observe(this.counter);
+  }
+
+  stopCounter() {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class AnimateIn {
+  static selector = "[data-animate-in]";
+
+  constructor(element, options = {}) {
+    this.element = element;
+    this.direction = element.dataset.animateIn || "up";
+    this.delay = parseInt(element.dataset.animateDelay) || options.delay || 20;
+    this.duration = options.duration || 600;
+    this.rootMargin = options.rootMargin || "0px 0px -20px 0px";
+
+    this.init();
+  }
+
+  init() {
+    this.setupInitialStyles();
+    this.createObserver();
+  }
+
+  setupInitialStyles() {
+    this.element.style.opacity = 0;
+    this.element.style.transform = `translateY(${
+      this.direction === "up"
+        ? "5rem"
+        : this.direction === "down"
+        ? "-5rem"
+        : "0"
+    }) translateX(${
+      this.direction === "left"
+        ? "-5rem"
+        : this.direction === "right"
+        ? "5rem"
+        : "0"
+    })`;
+
+    // Trigger reflow
+    this.element.offsetHeight;
+
+    this.element.style.transition = `all ${this.duration}ms ease-out`;
+    if (this.delay) {
+      this.element.style.transitionDelay = this.delay + "ms";
+    }
+  }
+
+  createObserver() {
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            this.animateIn();
+          }
+        });
+      },
+      {
+        rootMargin: this.rootMargin,
+      }
+    );
+    this.observer.observe(this.element);
+  }
+
+  animateIn() {
+    this.element.style.opacity = 1;
+    this.element.style.transform = "translateY(0) translateX(0)";
+    this.observer.unobserve(this.element);
+
+    setTimeout(() => {
+      this.element.style.transition = "";
+      this.element.style.transitionDelay = "";
+    }, this.delay + this.duration + 10);
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class Expand {
+  static selector = "[data-expand]";
+
+  constructor(element, options = {}) {
+    this.element = element;
+    this.toggle = element.querySelector("[data-expand-toggle]");
+    this.content = element.querySelector("[data-expand-content]");
+
+    // Exit early if required elements don't exist
+    if (!this.toggle || !this.content) {
+      return;
+    }
+
+    this.init();
+  }
+
+  init() {
+    this.setupEventListener();
+  }
+
+  setupEventListener() {
+    this.toggle.addEventListener("click", () => {
+      this.handleToggle();
+    });
+  }
+
+  handleToggle() {
+    if (isActive(this.content)) {
+      setActive(this.toggle, false);
+      setActive(this.content, false);
+      transitionHeightToZero(this.content);
+    } else {
+      setActive(this.toggle, true);
+      setActive(this.content, true);
+      transitionHeightToAuto(this.content);
+    }
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class MobileMenu {
+  static selector = "[data-mobile-menu]";
+
+  constructor(element, options = {}) {
+    this.mobileMenu = element;
+    this.menuOpen = document.querySelector("[data-mobile-menu-open]");
+    this.menuClose = document.querySelector("[data-mobile-menu-close]");
+    this.links = this.mobileMenu.querySelectorAll("a");
+
+    this.init();
+  }
+
+  init() {
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    this.menuOpen?.addEventListener("click", () => {
+      this.openMenu();
+    });
+
+    this.menuClose?.addEventListener("click", () => {
+      this.closeMenu();
+    });
+
+    this.links?.forEach((link) => {
+      link?.addEventListener("click", () => {
+        this.closeMenu();
+      });
+    });
+  }
+
+  openMenu() {
+    setActive(this.mobileMenu, true);
+  }
+
+  closeMenu() {
+    setActive(this.mobileMenu, false);
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class StickyHeader {
+  static selector = "[data-sticky-header]";
+
+  constructor(element, options = {}) {
+    this.header = element;
+    this.logo = document.querySelector("[data-sticky-header-logo]");
+    this.scrollThreshold = options.scrollThreshold || 80;
+    this.breakpoint = options.breakpoint || 768;
+
+    // Exit early if sticky is disabled
+    if (this.header.dataset.stickyHeader === "false") {
+      return;
+    }
+
+    this.hasAdminBar = document.body.classList.contains("admin-bar");
+
+    this.init();
+  }
+
+  init() {
+    this.setupScrollListener();
+  }
+
+  setupScrollListener() {
+    window.addEventListener("scroll", () => {
+      this.handleScroll();
+    });
+  }
+
+  handleScroll() {
+    const vw = Math.max(
+      document.documentElement.clientWidth || 0,
+      window.innerWidth || 0
+    );
+
+    if (window.scrollY > this.scrollThreshold) {
+      this.header.style.position = "fixed";
+      this.header.style.transform =
+        this.hasAdminBar && vw > this.breakpoint
+          ? "translateY(2rem)"
+          : "translateY(0)";
+    } else {
+      this.header.style.position = "";
+      this.header.style.transform = "";
+      this.header.style.height = "";
+      if (this.logo) {
+        this.logo.style.height = "";
+      }
+    }
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class Tabs {
+  static selector = "[data-tabs]";
+
+  constructor(element, options = {}) {
+    this.group = element;
+    this.triggers = element.querySelectorAll("[data-tab-trigger]");
+    this.contents = element.querySelectorAll("[data-tab-content]");
+
+    this.init();
+  }
+
+  init() {
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    this.triggers.forEach((trigger) => {
+      const id = trigger.getAttribute("data-tab-trigger");
+      const actions = (trigger.getAttribute("data-action") || "click").split(
+        ","
+      );
+      const content = this.group.querySelector(`[data-tab-content="${id}"]`);
+
+      if (actions.includes("hover")) {
+        trigger.addEventListener("mouseenter", () => {
+          this.handleTabClick(trigger, content);
+        });
+      }
+
+      if (actions.includes("click")) {
+        trigger.addEventListener("click", () => {
+          this.handleTabClick(trigger, content);
+        });
+      }
+    });
+  }
+
+  handleTabClick(activeTrigger, activeContent) {
+    // Deactivate all triggers and hide all contents
+    this.triggers.forEach((trigger) => setActive(trigger, false));
+    this.contents.forEach((content) => setHidden(content, true));
+
+    // Activate clicked trigger and show corresponding content
+    setActive(activeTrigger, true);
+    setHidden(activeContent, false);
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class Accordion {
+  static selector = "[data-accordion]";
+
+  constructor(element, options = {}) {
+    this.accordion = element;
+    this.sectionId = element.dataset.accordion;
+    this.items = element.querySelectorAll("[data-accordion-item]");
+    this.images = document.querySelectorAll(
+      "[data-accordion-image^='" + this.sectionId + "']"
+    );
+    this.contents = element.querySelectorAll("[data-accordion-content]");
+    this.openFirst = element.dataset.openFirst !== undefined;
+
+    this.init();
+  }
+
+  init() {
+    this.setupInitialState();
+    this.setupEventListeners();
+  }
+
+  setupInitialState() {
+    // Close all contents initially
+    this.contents.forEach(transitionHeightToZero);
+
+    // Open first item if specified
+    if (this.openFirst && this.items.length > 0) {
+      setActive(this.items[0], true);
+      transitionHeightToAuto(this.contents[0]);
+    }
+  }
+
+  setupEventListeners() {
+    this.items.forEach((item) => {
+      const itemId = item.dataset.accordionItem;
+      const trigger = item.querySelector("[data-accordion-trigger]");
+      const content = item.querySelector("[data-accordion-content]");
+
+      trigger.addEventListener("click", () => {
+        this.handleItemClick(item, content, itemId);
+      });
+    });
+  }
+
+  handleItemClick(item, content, itemId) {
+    if (isActive(item)) {
+      // Close the active item
+      setActive(item, false);
+      transitionHeightToZero(content);
+    } else {
+      // Open the clicked item and close others
+      setActive(item, true);
+      transitionHeightToAuto(content);
+
+      // Close all other items
+      this.items.forEach((otherItem) => {
+        if (otherItem !== item) {
+          setActive(otherItem, false);
+        }
+      });
+
+      this.contents.forEach((otherContent) => {
+        if (otherContent !== content) {
+          transitionHeightToZero(otherContent);
+        }
+      });
+
+      // Handle associated images with fade transition
+      this.images.forEach((img) => {
+        if (img.dataset.accordionImage === itemId) {
+          fadeIn(img, 500, "down");
+        } else {
+          fadeOut(img, 500, "down");
+        }
+      });
+    }
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class Dropdown {
+  static selector = "[data-dropdown]";
+
+  constructor(element, options = {}) {
+    this.dropdown = element;
+    this.button = element.querySelector("[data-dropdown-button]");
+    this.list = element.querySelector("[data-dropdown-list]");
+    this.actions = (
+      this.button.getAttribute("data-dropdown-button") || "click"
+    ).split(",");
+
+    this.init();
+  }
+
+  init() {
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    if (this.actions.includes("hover")) {
+      this.setupHoverEvents();
+    }
+
+    if (this.actions.includes("click")) {
+      this.setupClickEvents();
+    }
+
+    this.setupKeyboardEvents();
+  }
+
+  setupHoverEvents() {
+    this.dropdown.addEventListener("mouseenter", () => {
+      this.showDropdown();
+    });
+
+    this.dropdown.addEventListener("mouseleave", () => {
+      this.hideDropdown();
+    });
+  }
+
+  setupClickEvents() {
+    this.button.addEventListener("click", () => {
+      this.toggleDropdown();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!this.dropdown.contains(e.target)) {
+        this.hideDropdown();
+      }
+    });
+  }
+
+  setupKeyboardEvents() {
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.hideDropdown();
+      }
+    });
+  }
+
+  showDropdown() {
+    this.list.style.display = "block";
+  }
+
+  hideDropdown() {
+    this.list.style.display = "none";
+  }
+
+  toggleDropdown() {
+    this.list.style.display =
+      this.list.style.display === "none" ? "block" : "none";
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class Video {
+  static selector = "[data-video]";
+
+  constructor(element, options = {}) {
+    this.video = element;
+    this.triggers = document.querySelectorAll("[data-video-trigger]");
+    this.close = element.querySelector("[data-video-close]");
+    this.backdrop = element.querySelector("[data-video-backdrop]");
+    this.iframe = element.querySelector("[data-video-iframe]");
+
+    this.init();
+  }
+
+  init() {
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    // Setup trigger events
+    this.triggers?.forEach((trigger) => {
+      const url = trigger.dataset.videoTrigger;
+      trigger.addEventListener("click", () => {
+        this.openVideo(url);
+      });
+    });
+
+    // Setup close events
+    this.close.addEventListener("click", () => {
+      this.closeVideo();
+    });
+
+    this.backdrop.addEventListener("click", () => {
+      this.closeVideo();
+    });
+
+    // Setup keyboard events
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        this.closeVideo();
+      }
+    });
+  }
+
+  openVideo(url) {
+    this.video.style.display = "";
+    this.iframe.src = url;
+  }
+
+  closeVideo() {
+    this.video.style.display = "none";
+    this.iframe.src = "";
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class Carousel {
+  static selector = "[data-carousel]";
+
+  constructor(element, options = {}) {
+    this.root = element;
+    this.name = `carousel-${
+      element.dataset.carousel || Math.random().toString(36).substring(2, 9)
+    }`;
+    this.wrapper = element.querySelector("[data-carousel-wrapper]");
+    this.prev = element.querySelector("[data-carousel-prev]");
+    this.next = element.querySelector("[data-carousel-next]");
+    this.dots = element.querySelectorAll("[data-carousel-dot]");
+
+    this.dotListenerFns = [];
+    this.embla = null;
+
+    this.init();
+  }
+
+  init() {
+    this.setupOptions();
+    this.setupPlugins();
+    this.createEmbla();
+    this.setupEventHandlers();
+  }
+
+  setupOptions() {
+    this.options = {
+      loop: this.root.hasAttribute("data-loop"),
+      duration: Number(this.root.dataset.duration ?? 25),
+      align: this.root.dataset.align ?? "center",
+      slidesToScroll: this.root.dataset.slidesToScroll ?? 1,
+      dragFree: this.root.hasAttribute("data-free"),
+    };
+  }
+
+  setupPlugins() {
+    this.plugins = [];
+
+    if (this.root.hasAttribute("data-autoplay")) {
+      this.plugins.push(
+        EmblaCarouselAutoplay({
+          delay: this.root.dataset.delay ?? 7000,
+        })
+      );
+    }
+
+    if (this.root.hasAttribute("data-autoscroll")) {
+      this.plugins.push(
+        EmblaCarouselAutoScroll({
+          speed: this.root.dataset.speed ?? 2,
+        })
+      );
+    }
+
+    if (this.root.hasAttribute("data-fade")) {
+      this.plugins.push(EmblaCarouselFade());
+      this.options.containScroll = false;
+    }
+  }
+
+  createEmbla() {
+    this.embla = EmblaCarousel(this.wrapper, this.options, this.plugins);
+  }
+
+  setupEventHandlers() {
+    this.addEventHandlers();
+    this.embla
+      .on("init", () => this.update())
+      .on("reInit", () => this.update())
+      .on("select", () => this.update())
+      .on("scroll", () => this.update())
+      .on("destroy", () => this.removeEventHandlers());
+  }
+
+  update() {
+    this.embla.slideNodes().forEach((slide) => {
+      slide.style.display = "";
+    });
+
+    // Handle slide-down animation if enabled
+    if (this.slideDownEnabled) {
+      this.embla.slidesInView().forEach((idx) => {
+        const slide = this.embla.slideNodes()[idx];
+        setActive(slide, true);
+      });
+
+      this.embla.slidesNotInView().forEach((idx) => {
+        const slide = this.embla.slideNodes()[idx];
+        setActive(slide, false);
+      });
+    } else {
+      this.embla.slidesInView().forEach((idx) => {
+        setActive(this.embla.slideNodes()[idx], true);
+      });
+
+      this.embla.slidesNotInView().forEach((idx) => {
+        setActive(this.embla.slideNodes()[idx], false);
+      });
+    }
+
+    setDisabled(this.prev, !this.embla.canScrollPrev());
+    setDisabled(this.next, !this.embla.canScrollNext());
+
+    this.dots.forEach((d) => setActive(d, false));
+    setActive(this.dots[this.embla.selectedScrollSnap()], true);
+  }
+
+  addEventHandlers() {
+    this.prev?.addEventListener("click", this.embla.scrollPrev);
+    this.next?.addEventListener("click", this.embla.scrollNext);
+
+    this.dots.forEach((d, i) => {
+      const fn = () => this.embla.scrollTo(i);
+      this.dotListenerFns[i] = fn;
+      d.addEventListener("click", fn);
+    });
+
+    window.addEventListener("segen-action", (event) => {
+      if (event.detail.action === this.name) {
+        this.embla.scrollNext();
+      }
+    });
+  }
+
+  removeEventHandlers() {
+    this.prev?.removeEventListener("click", this.embla.scrollPrev);
+    this.next?.removeEventListener("click", this.embla.scrollNext);
+
+    this.dots.forEach((d, i) => {
+      if (this.dotListenerFns[i]) {
+        d.removeEventListener("click", this.dotListenerFns[i]);
+      }
+    });
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+class Draw {
+  static selector = "[data-draw]";
+
+  constructor(element, options = {}) {
+    this.draw = element;
+    this.trigger = element.querySelector("[data-draw-trigger]");
+
+    this.init();
+  }
+
+  init() {
+    this.setupEventListener();
+  }
+
+  setupEventListener() {
+    this.trigger.addEventListener("click", () => {
+      this.toggleDraw();
+    });
+  }
+
+  toggleDraw() {
+    this.draw.classList.toggle("active");
+  }
+
+  static register() {
+    document.querySelectorAll(this.selector).forEach((el) => new this(el));
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Refresh nonce on page load to avoid caching issues
+
+  refreshNonce();
+
+  // Initialize spam detection timestamp fields
+  initSpamDetection();
+
+  StickyHeader.register();
+  Tabs.register();
+  Accordion.register();
+  Dropdown.register();
+  Carousel.register();
+  Video.register();
+  Draw.register();
+  AnimateIn.register();
+  Counter.register();
+  TextRotator.register();
+  Expand.register();
+  MobileMenu.register();
+  handleForm();
+  handleFormV2();
+
+  function handleForm() {
+    const forms = document.querySelectorAll("[data-form]");
+    forms.forEach((form) => {
+      const submitButton = form.querySelector("button[type=submit]");
+      const successMessage = form.querySelector("[data-form-success]");
+      const errorMessage = form.querySelector("[data-form-error]");
+      const fields = form.querySelectorAll(".form-field");
+      const formName = form.dataset.form;
+      form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        let buttonContent = submitButton.innerHTML;
+        try {
+          // disable form
+          submitButton.setAttribute("disabled", "disabled");
+          submitButton.innerHTML = "Submitting...";
+          errorMessage.style.display = "none";
+          successMessage.style.display = "none";
+
+          // handle reCAPTCHA
+          const token = await recaptchaAsync();
+
+          // build form data
+          const data = Object.fromEntries(new FormData(form).entries());
+          const body = new URLSearchParams({
+            ...data,
+            action: `segen_form_${formName}_submit`,
+            nonce: window.segen.ajax_nonce,
+            recaptcha_token: token,
+          });
+
+          // send submission
+          const response = await fetch(window.segen.ajax_url, {
+            method: "POST",
+            body: body,
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          });
+          const result = await response.json();
+
+          // handle success
+          if (result.success) {
+            // clear validation errors
+            fields.forEach((field) => {
+              const error = field.querySelector(".form-error");
+              if (error) error.textContent = "";
+            });
+
+            // handle success message
+            if (result.data.message) {
+              successMessage.style.display = "";
+              successMessage.innerHTML = result.data.message;
+            }
+
+            // hide form fields on success
+            const formFields = form.querySelector(".form-fields");
+            if (formFields) {
+              formFields.style.display = "none";
+            }
+
+            // reset form
+            form.reset();
+
+            // push data to GTM
+            window.dataLayer = window.dataLayer || [];
+
+            const user_email = data.email_address
+              ? await hashValue(data.email_address)
+              : null;
+
+            const user_tel = data.phone_number
+              ? await hashValue(data.phone_number)
+              : null;
+
+            dataLayer?.push({
+              event: "formSubmission",
+              formType: formName,
+              user_email: user_email,
+              user_tel: user_tel,
+              user_exists: !!result?.data?.user_exists,
+            });
+          } else {
+            // handle validation errors
+            if (result.data?.errors) {
+              fields.forEach((field) => {
+                const name = field.dataset.formField;
+                const error = field.querySelector(".form-error");
+                if (error) {
+                  error.textContent = result.data.errors[name] ?? "";
+                }
+              });
+            }
+
+            // handle error message
+            if (result.data?.message) {
+              errorMessage.style.display = "";
+              errorMessage.innerHTML = result.data.message;
+            }
+          }
+        } catch (error) {
+          // handle fetch error
+          errorMessage.style.display = "";
+          errorMessage.innerHTML = error.message;
+        } finally {
+          // enable form
+          submitButton.removeAttribute("disabled");
+          submitButton.innerHTML = buttonContent;
+        }
+      });
+    });
+  }
+
+  function handleFormV2() {
+    const forms = document.querySelectorAll("[data-form-v2]");
+    forms.forEach((form) => {
+      const submitButton = form.querySelector("button[type=submit]");
+      const successMessage = form.querySelector("[data-form-success]");
+      const errorMessage = form.querySelector("[data-form-error]");
+      const fields = form.querySelectorAll(".form-field");
+      const formName = form.dataset.form;
+      form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        let buttonContent = submitButton.innerHTML;
+        try {
+          // disable form
+          submitButton.setAttribute("disabled", "disabled");
+          submitButton.innerHTML = "Submitting...";
+          errorMessage.style.display = "none";
+          successMessage.style.display = "none";
+
+          // handle reCAPTCHA
+          const token = await recaptchaAsync();
+
+          // build form data
+          const data = Object.fromEntries(new FormData(form).entries());
+          const body = new URLSearchParams({
+            ...data,
+            action: `segen_form_submit`,
+            nonce: window.segen.ajax_nonce,
+            recaptcha_token: token,
+          });
+
+          // send submission
+          const response = await fetch(window.segen.ajax_url, {
+            method: "POST",
+            body: body,
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          });
+          const result = await response.json();
+
+          // handle success
+          if (result.success) {
+            // clear validation errors
+            fields.forEach((field) => {
+              const error = field.querySelector(".form-error");
+              if (error) error.textContent = "";
+            });
+
+            // handle success message
+            if (result.data.message) {
+              successMessage.style.display = "";
+              successMessage.innerHTML = result.data.message;
+            }
+
+            // hide form fields on success
+            const formFields = form.querySelector(".form-fields");
+            if (formFields) {
+              formFields.style.display = "none";
+            }
+
+            // reset form
+            form.reset();
+
+            // push data to GTM
+            window.dataLayer = window.dataLayer || [];
+
+            const user_email = data.email_address
+              ? await hashValue(data.email_address)
+              : null;
+
+            const user_tel = data.phone_number
+              ? await hashValue(data.phone_number)
+              : null;
+
+            dataLayer?.push({
+              event: "formSubmission",
+              formType: formName,
+              user_email: user_email,
+              user_tel: user_tel,
+              user_exists: !!result?.data?.user_exists,
+            });
+          } else {
+            // handle validation errors
+            if (result.data?.errors) {
+              fields.forEach((field) => {
+                const name = field.dataset.formField;
+                const error = field.querySelector(".form-error");
+                if (error) {
+                  error.textContent = result.data.errors[name] ?? "";
+                }
+              });
+            }
+
+            // handle error message
+            if (result.data?.message) {
+              errorMessage.style.display = "";
+              errorMessage.innerHTML = result.data.message;
+            }
+          }
+        } catch (error) {
+          // handle fetch error
+          errorMessage.style.display = "";
+          errorMessage.innerHTML = error.message;
+        } finally {
+          // enable form
+          submitButton.removeAttribute("disabled");
+          submitButton.innerHTML = buttonContent;
+        }
+      });
+    });
+  }
+
+  async function recaptchaAsync() {
+    if (!window.recaptchaSiteKey) return "";
+    let recaptcha_token = "";
+    grecaptcha.ready(() => {
+      grecaptcha
+        .execute(window.recaptchaSiteKey, { action: "submit" })
+        .then((token) => {
+          recaptcha_token = token;
+        });
+    });
+    while (recaptcha_token == "") {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return recaptcha_token;
+  }
+
+  async function hashValue(email) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(email.trim().toLowerCase());
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+});
+
+function fadeIn(img, duration = 500, direction = "none") {
+  if (!img) return;
+
+  const parent = img.parentElement;
+
+  // Make sure element is visible to get proper dimensions
+  img.style.display = "block";
+  img.style.opacity = "1";
+
+  const rect = img.getBoundingClientRect();
+  const parentRect = parent.getBoundingClientRect();
+
+  // Store original styles
+  const originalStyles = {
+    position: img.style.position,
+    top: img.style.top,
+    left: img.style.left,
+    width: img.style.width,
+    height: img.style.height,
+    zIndex: img.style.zIndex,
+  };
+
+  // Ensure parent has position context
+  const parentOriginalPosition = parent.style.position;
+  if (!parent.style.position || parent.style.position === "static") {
+    parent.style.position = "relative";
+  }
+
+  // Set absolute positioning to maintain position
+  img.style.position = "absolute";
+  img.style.top = rect.top - parentRect.top + "px";
+  img.style.left = rect.left - parentRect.left + "px";
+  img.style.width = "100%";
+  img.style.height = "auto";
+  img.style.zIndex = "1";
+  if (direction === "down") {
+    img.style.translate = "0 -2rem";
+  } else if (direction === "up") {
+    img.style.translate = "0 2rem";
+  }
+
+  // Start fade in
+  img.style.display = "block";
+  img.style.opacity = "0";
+
+  // Trigger reflow to ensure opacity is applied
+  img.offsetHeight;
+
+  // Apply transition after initial state is set
+  img.style.transition = `all ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+
+  // Use requestAnimationFrame to ensure transition is applied
+  requestAnimationFrame(() => {
+    img.style.opacity = "1";
+    img.style.translate = "0 0";
+  });
+
+  // Restore original styles after transition
+  setTimeout(() => {
+    img.style.translate = "";
+    img.style.transition = "";
+    img.style.opacity = "";
+    Object.keys(originalStyles).forEach((prop) => {
+      img.style[prop] = originalStyles[prop];
+    });
+    if (!parentOriginalPosition) {
+      parent.style.position = "";
+    }
+  }, duration);
+}
+
+function fadeOut(img, duration = 500, direction = "none") {
+  if (!img) return;
+
+  const parent = img.parentElement;
+  const rect = img.getBoundingClientRect();
+  const parentRect = parent.getBoundingClientRect();
+
+  // Store original styles
+  const originalStyles = {
+    position: img.style.position,
+    top: img.style.top,
+    left: img.style.left,
+    width: img.style.width,
+    height: img.style.height,
+    zIndex: img.style.zIndex,
+  };
+
+  // Ensure parent has position context
+  const parentOriginalPosition = parent.style.position;
+  if (!parent.style.position || parent.style.position === "static") {
+    parent.style.position = "relative";
+  }
+
+  // Set absolute positioning to maintain position
+  img.style.position = "absolute";
+  img.style.top = rect.top - parentRect.top + "px";
+  img.style.left = rect.left - parentRect.left + "px";
+  img.style.width = "100%";
+  img.style.height = "auto";
+  img.style.zIndex = "0";
+  img.style.translate = "0 0";
+
+  // Start fade out
+  img.style.transition = `all ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+  img.style.opacity = "0";
+
+  if (direction === "down") {
+    img.style.translate = "0 2rem";
+  } else if (direction === "up") {
+    img.style.translate = "0 -2rem";
+  }
+
+  setTimeout(() => {
+    img.style.display = "none";
+    img.style.translate = "";
+    img.style.transition = "";
+    img.style.opacity = "";
+    // Restore original styles
+    Object.keys(originalStyles).forEach((prop) => {
+      img.style[prop] = originalStyles[prop];
+    });
+    if (!parentOriginalPosition) {
+      parent.style.position = "";
+    }
+  }, duration);
+}
+
+function setDisabled(el, disabled = true) {
+  if (!el) return;
+  disabled
+    ? el.setAttribute("disabled", "disabled")
+    : el.removeAttribute("disabled");
+}
+
+function isActive(element) {
+  return element?.getAttribute("data-active") === "true";
+}
+
+function setActive(element, active) {
+  element?.setAttribute("data-active", String(active));
+}
+
+function setHidden(element, hidden) {
+  element?.setAttribute("data-hidden", String(hidden));
+  element.style.display = hidden ? "none" : "";
+}
+
+function transitionHeightToZero(element, durationMs = 250) {
+  const height = element.offsetHeight;
+  element.style.height = height + "px";
+  element.offsetHeight;
+  element.style.transition = "all " + durationMs + "ms ease-out";
+  element.style.height = 0;
+}
+
+function transitionHeightToAuto(element, durationMs = 250) {
+  element.style.height = "auto";
+  element.style.transition = "none";
+  const height = element.offsetHeight;
+  element.style.height = 0;
+  element.style.transition = "all " + durationMs + "ms ease-out";
+  element.offsetHeight;
+  element.style.height = height + "px";
+  setTimeout(() => {
+    element.style.height = "auto";
+  }, durationMs);
+}
+
+// Spam detection initialization
+function initSpamDetection() {
+  // Set timestamp on all forms when page loads
+  const timestampFields = document.querySelectorAll("input[data-timestamp]");
+  const currentTime = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+
+  timestampFields.forEach((field) => {
+    field.value = currentTime;
+  });
+}
+
+// Nonce management functions
+async function refreshNonce() {
+  try {
+    const res = await fetch(window.segen.ajax_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        action: "segen_nonce_refresh",
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to refresh nonce`);
+    }
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error("Failed to refresh nonce");
+    }
+
+    window.segen.ajax_nonce = data.data.nonce;
+    return data.data.nonce;
+  } catch (error) {
+    console.error("Error refreshing nonce:", error);
+    throw error;
+  }
+}
