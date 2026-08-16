@@ -1,0 +1,170 @@
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+   <script>!function(){"use strict";const e="na1",t={APP:"app",APP_API:"app-api"};function n(t,n){const r=n&&n.hubletOverride?n.hubletOverride:t,o=n&&!0===n.hubletizeNa1;return r!==e||o?`-${r}`:""}function r(e,r,o){if(o&&o.hubletPostfixLocation&&"domain"===o.hubletPostfixLocation)return r;r===t.APP_API&&(r=t.APP);return`${r}${n(e,o)}`}function o(e,t,n){return`${s(n)}${i(t,n)}${a(e,n)}`}function i(e,t){return"qa"===(t&&t.envOverride?t.envOverride:e)?"qa":""}function s(e){return e&&e.domainOverride?e.domainOverride:"hubspot"}function a(e,t){return t&&t.hubletPostfixLocation&&"domain"===t.hubletPostfixLocation?n(e,t):""}function d(e){return e&&e.tldOverride?e.tldOverride:"com"}function u(e){return e===t.APP_API?"/api":""}function c(e,t,n,i){return`https://${r(t,e,i)}.${o(t,n,i)}.${d(i)}${u(e)}`}let p,f=!1;const l="hs-form-event:on-ready",m="hs-forms:console-log",w=e=>{if(e instanceof Error)return{message:e.message,stack:e.stack,name:e.name};try{JSON.stringify(e);return e}catch(t){return String(e)}},h=(t,n)=>{const r=window.parent!==window&&/ui-forms-embed-components-app\/(static\/html\/)?frame.html/.test(window.location.href),o=c("tools",n&&n.length>0?n:e,"qa",{domainOverride:"hubteam"});if(!r||t)return new URL(r?t:o)},v=(e,t)=>{const n=console[e];console[e]=(...r)=>{n.apply(console,r);const o={type:m,level:e,args:r.map(w),timestamp:Date.now()};p?p.postMessage(o):t.push(o)}};var g=({isQa:e,region:t,pageUrl:n})=>{if(!e||window.parent===window||f)return;let r=[];const o=h(n,t);if(!o)return;v("error",r);v("warn",r);const i=e=>{var t;if("hs-forms:render-tool:init-log-channel"===(null===(t=e.data)||void 0===t?void 0:t.type)&&e.ports[0]&&e.origin===o.origin){p=e.ports[0];r.forEach((t=>e.ports[0].postMessage(t)));r=[];f=!0;window.removeEventListener("message",i)}},s=e=>{if(e instanceof CustomEvent&&e.type===l){window.parent.postMessage({type:"hs-forms:render-tool:iframe-ready"},o.href);window.removeEventListener(l,s)}};window.addEventListener("message",i);window.addEventListener(l,s)};Object.prototype.hasOwnProperty.call(window,"HubSpotFormsRenderTestingApp_DO_NOT_USE")||(window.HubSpotFormsRenderTestingApp_DO_NOT_USE={init:g})}();
+      //# sourceURL=//static.hsappstatic.net/ui-forms-embed-components-app/static-1.6537/bundles/render-testing-app.js</script>
+       
+</head>
+
+<body>
+
+  <div class="form-container">
+
+    <h1>Contact Form</h1>
+
+    <form id="contactForm">
+
+      <label>First Name</label>
+      <input
+        type="text"
+        id="firstname"
+        placeholder="Enter your name"
+        required
+      >
+       <label>Last Name</label>
+      <input
+        type="text"
+        id="lastname"
+        placeholder="Enter your name"
+        required
+      >
+
+      <label>Email</label>
+      <input
+        type="email"
+        id="email"
+        placeholder="Enter your email"
+        required
+      >
+
+      <button type="submit">
+        Submit
+      </button>
+
+    </form>
+
+    <div id="message"></div>
+
+  </div>
+
+
+  <!-- Supabase JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+
+const SUPABASE_URL = "https://ltgxnrztexdhhfypgfqo.supabase.co";
+const SUPABASE_KEY = "sb_publishable_SKdMiG7oAWxtXLdsPetkfQ_pIh1Gi82";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+
+// Define this BEFORE the submit handler
+const sendEmail = async (email, subject, text) => {
+  try {
+    const response = await fetch(
+      'https://ltgxnrztexdhhfypgfqo.supabase.co/functions/v1/bright-action',
+      {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer sb_publishable_SKdMiG7oAWxtXLdsPetkfQ_pIh1Gi82', // Use the stored token
+         'apikey' :'sb_publishable_SKdMiG7oAWxtXLdsPetkfQ_pIh1Gi82',
+         
+        },
+        body: JSON.stringify({
+          to: email,
+          subject: subject,
+          text: text
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert("Email error:", result);
+      alert(result.error || "Failed to send email");
+    }
+
+    return result;
+
+  } catch (error) {
+    alert("Error sending email:", error);
+   
+  }
+};
+
+
+// Handle form submission
+document
+  .getElementById("contactForm")
+  .addEventListener("submit", async function (event) {
+
+    event.preventDefault();
+  const name = document.getElementById("firstname").value;
+    const firstname = document.getElementById("firstname").value;
+        const lastname = document.getElementById("lastname").value;
+    const email = document.getElementById("email").value;
+    const message = document.getElementById("message");
+
+    message.textContent = "Saving...";
+
+    // Save contact
+    const { error } = await supabaseClient
+      .from("contacts")
+      .insert([
+        {
+          name: firstname,
+          firstname: firstname,
+          lastname:lastname,
+          email: email
+        }
+      ]);
+
+    if (error) {
+      console.error(error);
+
+      message.textContent = "Error: " + error.message;
+      message.style.color = "red";
+
+      return;
+    }
+
+    // Send email AFTER successful database insert
+    try {
+      await sendEmail(
+        email,
+        "New contact form submission",
+        `Name: $firstname}\nEmail: ${email}`
+      );
+
+      message.textContent =
+        "Email and form submitted successfully!";
+
+      message.style.color = "green";
+
+      document.getElementById("contactForm").reset();
+
+    } catch (error) {
+
+      message.textContent =
+        "Form saved, but email could not be sent.";
+
+      message.style.color = "orange";
+
+      console.error(error);
+    }
+  });
+   
+  </script>
+
+</body>
+</html>
