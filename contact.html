@@ -109,7 +109,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
  
 <header class="relative top-0 left-0 z-30 w-full no-lazy">
 
-    <a class="sr-only" href="https://Midlandsheatpumps.ie/?_gl=1%2A1hab5z5%2A_up%2AMQ..%2A_gs%2AMQ..%2A_ga%2ANzgyNzcxNTUxLjE3ODExODM2OTA.%2A_ga_3V6Y5LL42S%2AczE3ODExODM2OTAkbzEkZzEkdDE3ODExODM3MDMkajQ3JGwwJGgw&amp;gclid=EAIaIQobChMIk6qbp6L_lAMVyoxQBh3EHjOREAAYASAAEgKd1PD_BwE#content">
+    <a class="sr-only" href="">
         Skip to content
     </a>
 
@@ -615,8 +615,7 @@ const sendEmail = async (email, subject, text) => {
     const result = await response.json();
 
     if (!response.ok) {
-      alert("Email error:", result);
-      alert(result.error || "Failed to send email");
+    
     }
 
     return result;
@@ -634,11 +633,11 @@ document
   .addEventListener("submit", async function (event) {
 
     event.preventDefault();
-alert("Hola");
+
     const name = document.getElementById("firstname").value;
     const email = document.getElementById("email").value;
     const message = document.getElementById("message");
-	alert("Hola");
+	
     message.textContent = "Saving yah...";
 
     // Save contact
