@@ -183,14 +183,13 @@ const sendEmail = async (email, subject, name,address,phonenumber,enquirymessage
     const result = await response.json();
 
     if (!response.ok) {
-      alert("Email error:", result);
-      alert(result.error || "Failed to send email");
+      
     }
 
     return result;
 
   } catch (error) {
-    alert("Error sending email:", error);
+   
    
   }
 };
@@ -207,18 +206,18 @@ document
         const lastname = document.getElementById("lastname").value;
     const email = document.getElementById("email").value;
     	const phonenumber = document.getElementById("phonenumber").value; 
- alert(phonenumber);
+
 const enquirymessage = document.getElementById("enquirymessage").value;
-alert(enquirymessage);
+
 const addressline1 = document.getElementById("addressline1").value; 
- alert(addressline1);
+
 const addressline2 = document.getElementById("addressline2").value;
- alert(addressline2);
+
 const towncity = document.getElementById("towncity").value;
 
 const county = document.getElementById("county").value;
 const eircode = document.getElementById("eircode").value; 
-alert(eircode);
+
 let address = "";
 
 address += document.getElementById("addressline1").value;
@@ -226,7 +225,7 @@ address += document.getElementById("addressline2").value ? ", " + document.getEl
 address += document.getElementById("towncity").value ? ", " + document.getElementById("towncity").value : "";
 address += document.getElementById("county").value ? ", " + document.getElementById("county").value : "";
 address += document.getElementById("eircode").value ? ", " + document.getElementById("eircode").value : "";
-alert(address);
+
     message.textContent = "Saving...";
 
     // Save contact
